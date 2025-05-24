@@ -1,6 +1,4 @@
 
-import axios from 'axios';
-
 export interface AIAnalysisRequest {
   portfolioData: any[];
   marketData: any[];
@@ -33,9 +31,13 @@ export class AIService {
     try {
       const prompt = this.createAnalysisPrompt(request);
       
-      const response = await axios.post(
-        `${this.baseUrl}/chat/completions`,
-        {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
             {
@@ -49,16 +51,11 @@ export class AIService {
           ],
           max_tokens: 1500,
           temperature: 0.7,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+        })
+      });
 
-      const aiResponse = response.data.choices[0].message.content;
+      const data = await response.json();
+      const aiResponse = data.choices[0].message.content;
       return this.parseAIResponse(aiResponse, request);
     } catch (error) {
       console.error('Failed to analyze portfolio with AI:', error);
@@ -68,9 +65,13 @@ export class AIService {
 
   async generateAgentResponse(message: string, agentPersonality: string, context: any[]): Promise<string> {
     try {
-      const response = await axios.post(
-        `${this.baseUrl}/chat/completions`,
-        {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
             {
@@ -88,16 +89,11 @@ Respond in character while providing helpful insights about DeFi, portfolio mana
           ],
           max_tokens: 300,
           temperature: 0.8,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+        })
+      });
 
-      return response.data.choices[0].message.content;
+      const data = await response.json();
+      return data.choices[0].message.content;
     } catch (error) {
       console.error('Failed to generate agent response:', error);
       return "I'm processing your message and storing it in my decentralized memory. Let me analyze this information and provide you with insights based on my immortal knowledge base.";
@@ -120,9 +116,13 @@ Consider:
 
 Provide specific recommendations with expected APY, risk level, and rationale.`;
 
-      const response = await axios.post(
-        `${this.baseUrl}/chat/completions`,
-        {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
             {
@@ -136,16 +136,11 @@ Provide specific recommendations with expected APY, risk level, and rationale.`;
           ],
           max_tokens: 800,
           temperature: 0.5,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+        })
+      });
 
-      const aiResponse = response.data.choices[0].message.content;
+      const data = await response.json();
+      const aiResponse = data.choices[0].message.content;
       return this.parseYieldOpportunities(aiResponse);
     } catch (error) {
       console.error('Failed to detect yield opportunities:', error);

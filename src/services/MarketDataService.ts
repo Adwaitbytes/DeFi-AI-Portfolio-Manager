@@ -1,6 +1,4 @@
 
-import axios from 'axios';
-
 export interface TokenPrice {
   id: string;
   symbol: string;
@@ -39,25 +37,27 @@ export class MarketDataService {
 
   async getTokenPrices(tokenIds: string[]): Promise<TokenPrice[]> {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/coins/markets`,
-        {
-          params: {
-            vs_currency: 'usd',
-            ids: tokenIds.join(','),
-            order: 'market_cap_desc',
-            per_page: 100,
-            page: 1,
-            sparkline: false,
-            price_change_percentage: '24h',
-          },
-          headers: {
-            'X-CG-Pro-API-Key': this.coingeckoApiKey,
-          },
-        }
-      );
+      const params = new URLSearchParams({
+        vs_currency: 'usd',
+        ids: tokenIds.join(','),
+        order: 'market_cap_desc',
+        per_page: '100',
+        page: '1',
+        sparkline: 'false',
+        price_change_percentage: '24h',
+      });
 
-      return response.data;
+      const response = await fetch(`${this.baseUrl}/coins/markets?${params}`, {
+        headers: {
+          'X-CG-Pro-API-Key': this.coingeckoApiKey,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
     } catch (error) {
       console.error('Failed to fetch token prices:', error);
       return [];
@@ -66,21 +66,25 @@ export class MarketDataService {
 
   async getHistoricalPrices(tokenId: string, days: number = 30): Promise<{ date: string; price: number; volatility: number }[]> {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/coins/${tokenId}/market_chart`,
-        {
-          params: {
-            vs_currency: 'usd',
-            days: days,
-            interval: 'daily',
-          },
-          headers: {
-            'X-CG-Pro-API-Key': this.coingeckoApiKey,
-          },
-        }
-      );
+      const params = new URLSearchParams({
+        vs_currency: 'usd',
+        days: days.toString(),
+        interval: 'daily',
+      });
 
-      const prices = response.data.prices;
+      const response = await fetch(`${this.baseUrl}/coins/${tokenId}/market_chart?${params}`, {
+        headers: {
+          'X-CG-Pro-API-Key': this.coingeckoApiKey,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const prices = data.prices;
+      
       return prices.map((price: [number, number], index: number) => {
         const date = new Date(price[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const currentPrice = price[1];
@@ -107,9 +111,15 @@ export class MarketDataService {
   async getDeFiPools(): Promise<DeFiPool[]> {
     try {
       // Using DeFiLlama API for pool data
-      const response = await axios.get('https://yields.llama.fi/pools');
+      const response = await fetch('https://yields.llama.fi/pools');
       
-      const bscPools = response.data.data
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const bscPools = data.data
         .filter((pool: any) => pool.chain === 'BSC' && pool.tvlUsd > 1000000) // Filter BSC pools with >1M TVL
         .slice(0, 10) // Top 10 pools
         .map((pool: any) => ({
@@ -167,7 +177,7 @@ export class MarketDataService {
   async getPortfolioValue(walletAddress: string): Promise<{ totalValue: number; tokens: any[] }> {
     try {
       // Using BSC scan API to get token balances
-      const response = await axios.get(
+      const response = await fetch(
         `https://api.bscscan.com/api?module=account&action=tokentx&address=${walletAddress}&page=1&offset=100&sort=desc&apikey=YourApiKeyToken`
       );
 
