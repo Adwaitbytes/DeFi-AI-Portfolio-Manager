@@ -1,167 +1,190 @@
 
 import CryptoJS from 'crypto-js';
-import { Client, VisibilityType, RedundancyType } from '@bnb-chain/greenfield-js-sdk';
 
 export interface MemoryData {
   id: string;
-  type: 'conversation' | 'insight' | 'preference' | 'context';
+  type: 'conversation' | 'insight' | 'preference' | 'context' | 'archive';
   content: string;
   timestamp: Date;
   platform?: string;
   metadata?: any;
 }
 
+export interface AgentData {
+  id: string;
+  name: string;
+  personality: string;
+  avatar: string;
+  walletAddress: string;
+  createdAt: Date;
+  lastActive: Date;
+  memoryCount: number;
+}
+
 export class GreenfieldService {
-  private client: Client;
   private bucketName: string;
   private encryptionKey: string;
+  private isInitialized: boolean = false;
 
-  constructor() {
-    this.client = Client.create('https://gnfd-testnet-sp1.bnbchain.org', '5600');
+  constructor(config?: { endpoint?: string; chainId?: number }) {
     this.bucketName = 'immortal-agents';
     this.encryptionKey = 'default-encryption-key-change-in-production';
+    
+    // Note: Greenfield SDK has browser compatibility issues
+    // For now, we'll use localStorage as fallback with encryption
+    console.log('GreenfieldService initialized with localStorage fallback');
   }
 
-  async initializeAgent(agentId: string, walletAddress: string): Promise<boolean> {
+  async initializeBucket(walletAddress: string): Promise<boolean> {
     try {
-      console.log('Initializing agent storage on Greenfield:', agentId);
-      
-      // Check if bucket exists, create if not
-      await this.ensureBucketExists();
-      
-      // Create agent directory structure
-      const agentBucketName = `${this.bucketName}-${agentId.toLowerCase()}`;
-      
-      try {
-        await this.client.bucket.createBucket({
-          bucketName: agentBucketName,
-          creator: walletAddress,
-          visibility: VisibilityType.VISIBILITY_TYPE_PRIVATE,
-          chargedReadQuota: BigInt(1000000),
-          spInfo: {
-            endpoint: 'https://gnfd-testnet-sp1.bnbchain.org'
-          }
-        });
-        
-        console.log('Agent bucket created successfully:', agentBucketName);
-      } catch (error) {
-        console.log('Bucket might already exist, continuing...');
-      }
-      
+      console.log('Initializing bucket for wallet:', walletAddress);
+      this.isInitialized = true;
       return true;
     } catch (error) {
-      console.error('Failed to initialize agent on Greenfield:', error);
+      console.error('Failed to initialize bucket:', error);
       return false;
     }
   }
 
-  async storeMemory(agentId: string, memory: MemoryData): Promise<boolean> {
+  async storeAgentData(walletAddress: string, agentData: AgentData): Promise<string | null> {
+    try {
+      const encryptedData = this.encryptData(JSON.stringify(agentData));
+      const key = `greenfield_agent_${walletAddress}`;
+      localStorage.setItem(key, encryptedData);
+      
+      console.log('Agent data stored (encrypted localStorage fallback)');
+      return `mock_tx_${Date.now()}`;
+    } catch (error) {
+      console.error('Failed to store agent data:', error);
+      return null;
+    }
+  }
+
+  async storeMemory(walletAddress: string, agentId: string, memory: MemoryData): Promise<string | null> {
     try {
       const encryptedContent = this.encryptData(JSON.stringify(memory));
-      const objectName = `memories/${memory.type}/${memory.id}.json`;
-      const agentBucketName = `${this.bucketName}-${agentId.toLowerCase()}`;
+      const key = `greenfield_memory_${agentId}_${memory.id}`;
+      localStorage.setItem(key, encryptedContent);
       
-      await this.client.object.createObject({
-        bucketName: agentBucketName,
-        objectName: objectName,
-        creator: '0x0000000000000000000000000000000000000000', // Replace with actual wallet
-        visibility: VisibilityType.VISIBILITY_TYPE_PRIVATE,
-        fileType: 'application/json',
-        redundancyType: RedundancyType.REDUNDANCY_EC_TYPE,
-        contentLength: BigInt(encryptedContent.length)
-      });
-
-      console.log('Memory stored on Greenfield:', objectName);
-      return true;
+      // Update memory index
+      const indexKey = `greenfield_memories_${agentId}`;
+      const existingIndex = localStorage.getItem(indexKey);
+      const memoryIndex = existingIndex ? JSON.parse(existingIndex) : [];
+      memoryIndex.unshift(memory.id);
+      localStorage.setItem(indexKey, JSON.stringify(memoryIndex));
+      
+      console.log('Memory stored (encrypted localStorage fallback)');
+      return `mock_tx_${Date.now()}`;
     } catch (error) {
-      console.error('Failed to store memory on Greenfield:', error);
-      return false;
+      console.error('Failed to store memory:', error);
+      return null;
+    }
+  }
+
+  async retrieveAgentData(walletAddress: string, version: string = 'latest'): Promise<AgentData | null> {
+    try {
+      const key = `greenfield_agent_${walletAddress}`;
+      const encryptedData = localStorage.getItem(key);
+      
+      if (encryptedData) {
+        const decryptedData = this.decryptData(encryptedData);
+        return JSON.parse(decryptedData);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to retrieve agent data:', error);
+      return null;
+    }
+  }
+
+  async retrieveMemories(walletAddress: string, agentId: string): Promise<MemoryData[]> {
+    try {
+      const indexKey = `greenfield_memories_${agentId}`;
+      const memoryIndex = localStorage.getItem(indexKey);
+      
+      if (!memoryIndex) return [];
+      
+      const memoryIds = JSON.parse(memoryIndex);
+      const memories: MemoryData[] = [];
+      
+      for (const memoryId of memoryIds) {
+        const memoryKey = `greenfield_memory_${agentId}_${memoryId}`;
+        const encryptedMemory = localStorage.getItem(memoryKey);
+        
+        if (encryptedMemory) {
+          const decryptedMemory = this.decryptData(encryptedMemory);
+          memories.push(JSON.parse(decryptedMemory));
+        }
+      }
+      
+      return memories;
+    } catch (error) {
+      console.error('Failed to retrieve memories:', error);
+      return [];
     }
   }
 
   async retrieveMemory(agentId: string, memoryId: string): Promise<MemoryData | null> {
     try {
-      const agentBucketName = `${this.bucketName}-${agentId.toLowerCase()}`;
+      const key = `greenfield_memory_${agentId}_${memoryId}`;
+      const encryptedData = localStorage.getItem(key);
       
-      const response = await this.client.object.getObject({
-        bucketName: agentBucketName,
-        objectName: `memories/${memoryId}.json`
-      });
-
-      if (response.body) {
-        const encryptedContent = await response.body.text();
-        const decryptedContent = this.decryptData(encryptedContent);
-        return JSON.parse(decryptedContent);
+      if (encryptedData) {
+        const decryptedData = this.decryptData(encryptedData);
+        return JSON.parse(decryptedData);
       }
       
       return null;
     } catch (error) {
-      console.error('Failed to retrieve memory from Greenfield:', error);
+      console.error('Failed to retrieve memory:', error);
       return null;
     }
   }
 
   async listMemories(agentId: string, type?: string): Promise<MemoryData[]> {
-    try {
-      const agentBucketName = `${this.bucketName}-${agentId.toLowerCase()}`;
-      const prefix = type ? `memories/${type}/` : 'memories/';
-      
-      const response = await this.client.object.listObjects({
-        bucketName: agentBucketName,
-        endpoint: 'https://gnfd-testnet-sp1.bnbchain.org'
-      });
-
-      const memories: MemoryData[] = [];
-      
-      // Note: The SDK structure may vary, using fallback for now
-      if (response.body && Array.isArray(response.body)) {
-        for (const object of response.body) {
-          if (object.objectInfo?.objectName?.startsWith(prefix)) {
-            const memory = await this.retrieveMemory(agentId, object.objectInfo.objectName);
-            if (memory) memories.push(memory);
-          }
-        }
-      }
-
-      return memories.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    } catch (error) {
-      console.error('Failed to list memories from Greenfield:', error);
-      return [];
+    const memories = await this.retrieveMemories('', agentId);
+    
+    if (type) {
+      return memories.filter(memory => memory.type === type);
     }
+    
+    return memories;
   }
 
   async deleteMemory(agentId: string, memoryId: string): Promise<boolean> {
     try {
-      const agentBucketName = `${this.bucketName}-${agentId.toLowerCase()}`;
+      const key = `greenfield_memory_${agentId}_${memoryId}`;
+      localStorage.removeItem(key);
       
-      await this.client.object.deleteObject({
-        bucketName: agentBucketName,
-        objectName: `memories/${memoryId}.json`,
-        operator: '0x0000000000000000000000000000000000000000' // Replace with actual wallet
-      });
-
-      console.log('Memory deleted from Greenfield:', memoryId);
+      // Update index
+      const indexKey = `greenfield_memories_${agentId}`;
+      const existingIndex = localStorage.getItem(indexKey);
+      if (existingIndex) {
+        const memoryIndex = JSON.parse(existingIndex);
+        const updatedIndex = memoryIndex.filter((id: string) => id !== memoryId);
+        localStorage.setItem(indexKey, JSON.stringify(updatedIndex));
+      }
+      
       return true;
     } catch (error) {
-      console.error('Failed to delete memory from Greenfield:', error);
+      console.error('Failed to delete memory:', error);
       return false;
     }
   }
 
   async getStorageQuota(agentId: string): Promise<{ used: number; total: number; cost: number }> {
     try {
-      const agentBucketName = `${this.bucketName}-${agentId.toLowerCase()}`;
-      
-      const response = await this.client.object.listObjects({
-        bucketName: agentBucketName,
-        endpoint: 'https://gnfd-testnet-sp1.bnbchain.org'
-      });
-
       let totalSize = 0;
-      if (response.body && Array.isArray(response.body)) {
-        totalSize = response.body.reduce((sum, obj) => {
-          return sum + (obj.objectInfo?.payloadSize ? Number(obj.objectInfo.payloadSize) : 0);
-        }, 0);
+      const keys = Object.keys(localStorage);
+      
+      for (const key of keys) {
+        if (key.includes(agentId)) {
+          const value = localStorage.getItem(key);
+          if (value) {
+            totalSize += new Blob([value]).size;
+          }
+        }
       }
 
       return {
@@ -175,28 +198,6 @@ export class GreenfieldService {
     }
   }
 
-  private async ensureBucketExists(): Promise<void> {
-    try {
-      await this.client.bucket.headBucket(this.bucketName);
-    } catch (error) {
-      // Bucket doesn't exist, create it
-      try {
-        await this.client.bucket.createBucket({
-          bucketName: this.bucketName,
-          creator: '0x0000000000000000000000000000000000000000', // Replace with actual wallet
-          visibility: VisibilityType.VISIBILITY_TYPE_PRIVATE,
-          chargedReadQuota: BigInt(1000000),
-          spInfo: {
-            endpoint: 'https://gnfd-testnet-sp1.bnbchain.org'
-          }
-        });
-        console.log('Main bucket created:', this.bucketName);
-      } catch (createError) {
-        console.error('Failed to create bucket:', createError);
-      }
-    }
-  }
-
   private encryptData(data: string): string {
     return CryptoJS.AES.encrypt(data, this.encryptionKey).toString();
   }
@@ -206,17 +207,14 @@ export class GreenfieldService {
     return bytes.toString(CryptoJS.enc.Utf8);
   }
 
-  // Set custom encryption key for user
   setEncryptionKey(key: string): void {
     this.encryptionKey = key;
   }
 
-  // Get connection status
   isConnected(): boolean {
-    return !!this.client;
+    return this.isInitialized;
   }
 
-  // Optimize storage by compressing old memories
   async optimizeStorage(agentId: string): Promise<boolean> {
     try {
       const memories = await this.listMemories(agentId);
@@ -224,19 +222,17 @@ export class GreenfieldService {
         new Date(m.timestamp).getTime() < Date.now() - (30 * 24 * 60 * 60 * 1000) // 30 days old
       );
 
-      // Compress old memories into archive
       if (oldMemories.length > 0) {
-        const archive = {
+        const archive: MemoryData = {
           id: `archive-${Date.now()}`,
-          type: 'archive' as const,
+          type: 'archive',
           content: JSON.stringify(oldMemories),
           timestamp: new Date(),
           metadata: { count: oldMemories.length }
         };
 
-        await this.storeMemory(agentId, archive);
+        await this.storeMemory('', agentId, archive);
 
-        // Delete individual old memories
         for (const memory of oldMemories) {
           await this.deleteMemory(agentId, memory.id);
         }

@@ -148,13 +148,13 @@ export const useImmortalAgent = (walletAddress: string | null) => {
     
     try {
       // Try to load from Greenfield first
-      const storedAgents = await greenfieldService.retrieveAgentData(walletAddress, 'latest');
+      const storedAgent = await greenfieldService.retrieveAgentData(walletAddress, 'latest');
       
-      if (storedAgents) {
-        setAgent(storedAgents);
+      if (storedAgent) {
+        setAgent(storedAgent);
         
         // Load memories from Greenfield
-        const storedMemories = await greenfieldService.retrieveMemories(walletAddress, storedAgents.id);
+        const storedMemories = await greenfieldService.retrieveMemories(walletAddress, storedAgent.id);
         setMemories(storedMemories);
         
         console.log('Agent and memories loaded from Greenfield');
