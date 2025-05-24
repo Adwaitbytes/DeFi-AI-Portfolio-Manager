@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { AgentMemory } from '@/types/agent';
 import { Brain, MessageCircle, Star, Tag, Clock, Shield } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface MemoryViewerProps {
   memories: AgentMemory[];
@@ -103,7 +104,16 @@ const MemoryViewer: React.FC<MemoryViewerProps> = ({ memories, isLoading }) => {
                 
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   {memory.encrypted && (
-                    <Shield className="w-3 h-3 text-green-400" title="Encrypted" />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Shield className="w-3 h-3 text-green-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Encrypted</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                   <div className="flex items-center gap-1">
                     <Star className="w-3 h-3" />
