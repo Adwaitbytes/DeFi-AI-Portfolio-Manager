@@ -1,87 +1,102 @@
 
 import { useState, useEffect } from 'react';
-import MarketDataService from '@/services/MarketDataService';
 
 export const useMarketData = () => {
   const [priceData, setPriceData] = useState<any[]>([]);
   const [topPools, setTopPools] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [marketService, setMarketService] = useState<MarketDataService | null>(null);
 
-  useEffect(() => {
-    const service = new MarketDataService('CG-uGqX9BzFmdwsJhjppkYt35Zp');
-    setMarketService(service);
-
-    // Connect to real-time price updates
-    service.connectWebSocket(['binancecoin', 'pancakeswap-token', 'binance-usd', 'ethereum', 'cardano']);
+  // Mock price data for the last 30 days
+  const generateMockPriceData = () => {
+    const data = [];
+    const basePrice = 235;
+    let currentPrice = basePrice;
     
-    service.subscribeToPriceUpdates((data) => {
-      console.log('Real-time price update:', data);
-      // Update price data with real-time info
-    });
+    for (let i = 30; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      
+      // Add some realistic price variation
+      const change = (Math.random() - 0.5) * 20;
+      currentPrice = Math.max(currentPrice + change, basePrice * 0.8);
+      
+      data.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        price: Math.round(currentPrice * 100) / 100,
+        volatility: Math.abs(change / currentPrice * 100)
+      });
+    }
+    
+    return data;
+  };
 
-    return () => {
-      service.disconnect();
-    };
-  }, []);
+  // Mock DeFi pools data
+  const mockTopPools = [
+    {
+      name: 'BNB-BUSD',
+      symbol: 'LP',
+      protocol: 'PancakeSwap',
+      apy: 45.67,
+      tvl: 125000000,
+      change24h: 2.34,
+      risk: 'Low'
+    },
+    {
+      name: 'CAKE-BNB',
+      symbol: 'LP',
+      protocol: 'PancakeSwap',
+      apy: 78.23,
+      tvl: 89000000,
+      change24h: -1.45,
+      risk: 'Medium'
+    },
+    {
+      name: 'ETH-BUSD',
+      symbol: 'LP',
+      protocol: 'PancakeSwap',
+      apy: 32.89,
+      tvl: 67000000,
+      change24h: 1.89,
+      risk: 'Low'
+    },
+    {
+      name: 'ALPACA-BNB',
+      symbol: 'LP',
+      protocol: 'Alpaca Finance',
+      apy: 156.78,
+      tvl: 23000000,
+      change24h: 5.67,
+      risk: 'High'
+    },
+    {
+      name: 'VENUS-BNB',
+      symbol: 'LP',
+      protocol: 'Venus',
+      apy: 42.34,
+      tvl: 45000000,
+      change24h: -0.89,
+      risk: 'Medium'
+    },
+    {
+      name: 'ADA-BUSD',
+      symbol: 'LP',
+      protocol: 'PancakeSwap',
+      apy: 28.45,
+      tvl: 34000000,
+      change24h: -0.78,
+      risk: 'Low'
+    }
+  ];
 
   const fetchMarketData = async () => {
-    if (!marketService) return;
-    
     setIsLoading(true);
     
-    try {
-      // Fetch real token prices
-      const tokenPrices = await marketService.getTokenPrices([
-        'binancecoin', 'pancakeswap-token', 'binance-usd', 'ethereum', 'cardano'
-      ]);
-
-      // Fetch historical data for BNB
-      const historicalPrices = await marketService.getHistoricalPrices('binancecoin', 30);
-      setPriceData(historicalPrices);
-
-      // Fetch real DeFi pools
-      const pools = await marketService.getDeFiPools();
-      setTopPools(pools);
-
-      console.log('Real market data loaded:', { tokenPrices, historicalPrices, pools });
-      
-    } catch (error) {
-      console.error('Failed to fetch real market data:', error);
-      
-      // Fallback to mock data
-      const mockPriceData = [];
-      const basePrice = 235;
-      let currentPrice = basePrice;
-      
-      for (let i = 30; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        
-        const change = (Math.random() - 0.5) * 20;
-        currentPrice = Math.max(currentPrice + change, basePrice * 0.8);
-        
-        mockPriceData.push({
-          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          price: Math.round(currentPrice * 100) / 100,
-          volatility: Math.abs(change / currentPrice * 100)
-        });
-      }
-      
-      setPriceData(mockPriceData);
-      setTopPools([
-        {
-          name: 'BNB-BUSD',
-          protocol: 'PancakeSwap',
-          apy: 45.67,
-          tvl: 125000000,
-          change24h: 2.34,
-          risk: 'Low'
-        }
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    setPriceData(generateMockPriceData());
+    setTopPools(mockTopPools);
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -91,13 +106,12 @@ export const useMarketData = () => {
     const interval = setInterval(fetchMarketData, 30000);
     
     return () => clearInterval(interval);
-  }, [marketService]);
+  }, []);
 
   return {
     priceData,
     topPools,
     isLoading,
-    refetch: fetchMarketData,
-    marketService
+    refetch: fetchMarketData
   };
 };
