@@ -56,15 +56,16 @@ const Index = () => {
     <div className="min-h-screen bg-midnight-950 matrix-bg">
       <Navbar
         onConnectWallet={wallet.connectWallet}
+        onDisconnectWallet={wallet.disconnectWallet}
         walletAddress={wallet.address}
         isConnecting={wallet.isConnecting}
       />
 
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8 max-w-7xl mx-auto">
         {!wallet.isConnected ? (
           // Welcome Screen
-          <div className="text-center py-10 sm:py-20 max-w-7xl mx-auto">
-            <div className="max-w-3xl mx-auto px-4">
+          <div className="text-center py-10 sm:py-20">
+            <div className="max-w-4xl mx-auto px-4">
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-neon-400 to-cyber-600 rounded-3xl flex items-center justify-center mx-auto mb-6 sm:mb-8 animate-float">
                 <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
               </div>
@@ -73,9 +74,9 @@ const Index = () => {
                 Immortal AI Agent Platform
               </h1>
               
-              <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed px-4">
+              <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed max-w-3xl mx-auto">
                 Create your sovereign AI companion that learns, evolves, and persists across all platforms.
-                Powered by decentralized memory, cross-platform interoperability, and BNB Chain.
+                Powered by decentralized memory on BNB Greenfield, cross-platform interoperability, and immortal intelligence.
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
@@ -93,9 +94,9 @@ const Index = () => {
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyber-600/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 mx-auto">
                     <Database className="w-5 h-5 sm:w-6 sm:h-6 text-cyber-400" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2">Decentralized Memory</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2">BNB Greenfield Storage</h3>
                   <p className="text-gray-400 text-xs sm:text-sm">
-                    On-chain memory storage using Membase for permanent, encrypted agent memories
+                    Decentralized memory storage using BNB Greenfield for permanent, encrypted agent memories
                   </p>
                 </div>
                 
@@ -121,7 +122,7 @@ const Index = () => {
           </div>
         ) : !immortalAgent.agent ? (
           // Agent Creation Screen
-          <div className="max-w-7xl mx-auto">
+          <div className="w-full">
             <AgentCreation
               onCreateAgent={immortalAgent.createAgent}
               isCreating={immortalAgent.isCreating}
@@ -129,9 +130,9 @@ const Index = () => {
           </div>
         ) : (
           // Main Application with Agent
-          <div className="max-w-7xl mx-auto">
+          <div className="w-full">
             {/* Tab Navigation */}
-            <div className="glass-card p-2 mb-4 sm:mb-8">
+            <div className="glass-card p-2 mb-4 sm:mb-8 sticky top-20 z-40">
               <div className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
@@ -154,31 +155,37 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Tab Content */}
-            <div className="space-y-4 sm:space-y-8 pb-8">
+            {/* Tab Content with proper scrolling */}
+            <div className="space-y-4 sm:space-y-8 pb-8 overflow-y-auto">
               {activeTab === 'agent' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-                  <div className="lg:col-span-1 h-[500px] sm:h-[600px]">
-                    <ImmortalChat
-                      agent={immortalAgent.agent}
-                      onAddMemory={immortalAgent.addMemory}
-                    />
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+                  <div className="xl:col-span-1 order-1">
+                    <div className="h-[400px] sm:h-[500px] lg:h-[600px]">
+                      <ImmortalChat
+                        agent={immortalAgent.agent}
+                        onAddMemory={immortalAgent.addMemory}
+                      />
+                    </div>
                   </div>
-                  <div className="lg:col-span-1 h-[500px] sm:h-[600px]">
-                    <MemoryViewer
-                      memories={immortalAgent.memories}
-                      isLoading={immortalAgent.isLoading}
-                    />
+                  <div className="xl:col-span-1 order-2">
+                    <div className="h-[400px] sm:h-[500px] lg:h-[600px]">
+                      <MemoryViewer
+                        memories={immortalAgent.memories}
+                        isLoading={immortalAgent.isLoading}
+                      />
+                    </div>
                   </div>
-                  <div className="lg:col-span-1 h-[500px] sm:h-[600px]">
-                    <CrossPlatformPanel
-                      platforms={crossPlatform.platforms}
-                      activeConnections={crossPlatform.activeConnections}
-                      isSyncing={crossPlatform.isSyncing}
-                      onConnect={crossPlatform.connectPlatform}
-                      onDisconnect={crossPlatform.disconnectPlatform}
-                      onSyncAll={crossPlatform.syncAllPlatforms}
-                    />
+                  <div className="xl:col-span-1 order-3">
+                    <div className="h-[400px] sm:h-[500px] lg:h-[600px]">
+                      <CrossPlatformPanel
+                        platforms={crossPlatform.platforms}
+                        activeConnections={crossPlatform.activeConnections}
+                        isSyncing={crossPlatform.isSyncing}
+                        onConnect={crossPlatform.connectPlatform}
+                        onDisconnect={crossPlatform.disconnectPlatform}
+                        onSyncAll={crossPlatform.syncAllPlatforms}
+                      />
+                    </div>
                   </div>
                 </div>
               )}

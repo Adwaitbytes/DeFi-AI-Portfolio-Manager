@@ -43,11 +43,50 @@ export const useCrossPlatform = () => {
   });
 
   const connectPlatform = async (platformId: string) => {
-    setState(prev => ({ ...prev, isSyncing: true }));
+    setState(prev => ({ 
+      ...prev, 
+      isSyncing: true,
+      platforms: prev.platforms.map(p => 
+        p.id === platformId 
+          ? { ...p, status: 'syncing' }
+          : p
+      )
+    }));
     
     try {
-      // Simulate platform connection
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simulate different connection processes for different platforms
+      const platform = state.platforms.find(p => p.id === platformId);
+      let connectionTime = 2000;
+      
+      switch (platformId) {
+        case 'discord':
+          connectionTime = 3000;
+          console.log('Connecting to Discord Bot via BNB Greenfield protocol...');
+          break;
+        case 'telegram':
+          connectionTime = 2500;
+          console.log('Connecting to Telegram Bot via BNB Greenfield protocol...');
+          break;
+        case 'browser':
+          connectionTime = 1500;
+          console.log('Installing Browser Extension via BNB Greenfield sync...');
+          break;
+        case 'mobile':
+          connectionTime = 4000;
+          console.log('Syncing with Mobile App via BNB Greenfield network...');
+          break;
+        default:
+          console.log(`Connecting to ${platform?.name}...`);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, connectionTime));
+      
+      // Simulate random connection failures for realism
+      const shouldFail = Math.random() < 0.2; // 20% chance of failure
+      
+      if (shouldFail) {
+        throw new Error(`Failed to connect to ${platformId}`);
+      }
       
       setState(prev => ({
         ...prev,
@@ -61,10 +100,30 @@ export const useCrossPlatform = () => {
         lastGlobalSync: new Date()
       }));
       
-      console.log(`Connected to platform: ${platformId}`);
+      console.log(`Successfully connected to ${platformId} via BNB Greenfield`);
     } catch (error) {
       console.error(`Failed to connect to platform ${platformId}:`, error);
-      setState(prev => ({ ...prev, isSyncing: false }));
+      setState(prev => ({
+        ...prev,
+        platforms: prev.platforms.map(p => 
+          p.id === platformId 
+            ? { ...p, status: 'error' }
+            : p
+        ),
+        isSyncing: false
+      }));
+      
+      // Retry connection after 3 seconds
+      setTimeout(() => {
+        setState(prev => ({
+          ...prev,
+          platforms: prev.platforms.map(p => 
+            p.id === platformId 
+              ? { ...p, status: 'disconnected' }
+              : p
+          )
+        }));
+      }, 3000);
     }
   };
 
@@ -86,7 +145,9 @@ export const useCrossPlatform = () => {
     setState(prev => ({ ...prev, isSyncing: true }));
     
     try {
-      // Simulate global sync
+      console.log('Starting global sync via BNB Greenfield network...');
+      
+      // Simulate global sync with Greenfield
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       setState(prev => ({
@@ -100,7 +161,7 @@ export const useCrossPlatform = () => {
         lastGlobalSync: new Date()
       }));
       
-      console.log('All platforms synced successfully');
+      console.log('All platforms synced successfully via BNB Greenfield');
     } catch (error) {
       console.error('Failed to sync platforms:', error);
       setState(prev => ({ ...prev, isSyncing: false }));

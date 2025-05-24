@@ -10,6 +10,7 @@ contract MemoryStorage is Ownable {
         string memoryType;
         string encryptedContent;
         bytes32 contentHash;
+        string greenfieldObjectId; // Reference to BNB Greenfield storage
         uint256 timestamp;
         uint8 importance;
         bool isActive;
@@ -20,11 +21,12 @@ contract MemoryStorage is Ownable {
     mapping(address => bool) public authorizedAgents;
 
     uint256 public memoryCount;
-    uint256 public storagePrice = 0.001 ether; // Cost to store memory
+    uint256 public storagePrice = 0.001 ether; // Cost to store memory on Greenfield
 
-    event MemoryStored(bytes32 indexed memoryId, uint256 indexed agentId, string memoryType);
+    event MemoryStored(bytes32 indexed memoryId, uint256 indexed agentId, string memoryType, string greenfieldObjectId);
     event MemoryDeleted(bytes32 indexed memoryId, uint256 indexed agentId);
     event AgentAuthorized(address indexed agentContract, bool authorized);
+    event GreenfieldSync(bytes32 indexed memoryId, string greenfieldObjectId);
 
     modifier onlyAuthorizedAgent() {
         require(authorizedAgents[msg.sender], "Not authorized agent contract");
@@ -40,10 +42,12 @@ contract MemoryStorage is Ownable {
         uint256 _agentId,
         string memory _memoryType,
         string memory _encryptedContent,
+        string memory _greenfieldObjectId,
         uint8 _importance
     ) public payable returns (bytes32) {
-        require(msg.value >= storagePrice, "Insufficient payment");
+        require(msg.value >= storagePrice, "Insufficient payment for Greenfield storage");
         require(_importance >= 1 && _importance <= 10, "Invalid importance level");
+        require(bytes(_greenfieldObjectId).length > 0, "Greenfield object ID required");
 
         bytes32 contentHash = keccak256(abi.encodePacked(_encryptedContent));
         bytes32 memoryId = keccak256(abi.encodePacked(_agentId, block.timestamp, memoryCount));
@@ -53,6 +57,7 @@ contract MemoryStorage is Ownable {
             memoryType: _memoryType,
             encryptedContent: _encryptedContent,
             contentHash: contentHash,
+            greenfieldObjectId: _greenfieldObjectId,
             timestamp: block.timestamp,
             importance: _importance,
             isActive: true
@@ -61,9 +66,16 @@ contract MemoryStorage is Ownable {
         agentMemories[_agentId].push(memoryId);
         memoryCount++;
 
-        emit MemoryStored(memoryId, _agentId, _memoryType);
+        emit MemoryStored(memoryId, _agentId, _memoryType, _greenfieldObjectId);
 
         return memoryId;
+    }
+
+    function syncWithGreenfield(bytes32 _memoryId, string memory _greenfieldObjectId) public onlyAuthorizedAgent {
+        require(memories[_memoryId].isActive, "Memory not active");
+        
+        memories[_memoryId].greenfieldObjectId = _greenfieldObjectId;
+        emit GreenfieldSync(_memoryId, _greenfieldObjectId);
     }
 
     function getMemory(bytes32 _memoryId) public view returns (Memory memory) {
@@ -93,5 +105,9 @@ contract MemoryStorage is Ownable {
         Memory memory mem = memories[_memoryId];
         bytes32 computedHash = keccak256(abi.encodePacked(mem.encryptedContent));
         return computedHash == mem.contentHash;
+    }
+
+    function getGreenfieldObjectId(bytes32 _memoryId) public view returns (string memory) {
+        return memories[_memoryId].greenfieldObjectId;
     }
 }
