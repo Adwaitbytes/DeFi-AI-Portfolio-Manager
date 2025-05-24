@@ -249,13 +249,13 @@ const Analytics = () => {
                       </TableCell>
                       <TableCell>{pool.protocol}</TableCell>
                       <TableCell className="text-neon-400 font-semibold">
-                        {pool.apy.toFixed(2)}%
+                        {pool.apy != null ? pool.apy.toFixed(2) : '0.00'}%
                       </TableCell>
                       <TableCell>
-                        ${(pool.tvl / 1000000).toFixed(1)}M
+                        ${pool.tvl != null ? (pool.tvl / 1000000).toFixed(1) : '0.0'}M
                       </TableCell>
-                      <TableCell className={pool.change24h >= 0 ? 'text-neon-400' : 'text-red-500'}>
-                        {pool.change24h >= 0 ? '+' : ''}{pool.change24h.toFixed(2)}%
+                      <TableCell className={pool.change24h != null && pool.change24h >= 0 ? 'text-neon-400' : 'text-red-500'}>
+                        {pool.change24h != null ? (pool.change24h >= 0 ? '+' : '') + pool.change24h.toFixed(2) : '0.00'}%
                       </TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -263,7 +263,7 @@ const Analytics = () => {
                           pool.risk === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
                           'bg-red-500/20 text-red-400'
                         }`}>
-                          {pool.risk}
+                          {pool.risk || 'Unknown'}
                         </span>
                       </TableCell>
                     </TableRow>
