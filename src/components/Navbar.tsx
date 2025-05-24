@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Wallet, Menu, X, Activity, BarChart3, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link, useLocation } from 'react-router-dom';
 
 interface NavbarProps {
   onConnectWallet: () => void;
@@ -11,6 +12,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onConnectWallet, walletAddress, isConnecting }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -22,25 +24,48 @@ const Navbar: React.FC<NavbarProps> = ({ onConnectWallet, walletAddress, isConne
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-neon-400 to-cyber-600 rounded-xl flex items-center justify-center animate-glow-pulse">
-              <Activity className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-neon-400 to-cyber-400 bg-clip-text text-transparent">
-              DeFi AI Portfolio
-            </span>
+            <Link to="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-neon-400 to-cyber-600 rounded-xl flex items-center justify-center animate-glow-pulse">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-neon-400 to-cyber-400 bg-clip-text text-transparent">
+                DeFi AI Portfolio
+              </span>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#dashboard" className="text-gray-300 hover:text-neon-400 transition-colors font-medium">
+            <Link 
+              to="/" 
+              className={`transition-colors font-medium ${
+                location.pathname === '/' 
+                  ? 'text-neon-400' 
+                  : 'text-gray-300 hover:text-neon-400'
+              }`}
+            >
               Dashboard
-            </a>
-            <a href="#analytics" className="text-gray-300 hover:text-neon-400 transition-colors font-medium">
+            </Link>
+            <Link 
+              to="/analytics" 
+              className={`transition-colors font-medium ${
+                location.pathname === '/analytics' 
+                  ? 'text-neon-400' 
+                  : 'text-gray-300 hover:text-neon-400'
+              }`}
+            >
               Analytics
-            </a>
-            <a href="#docs" className="text-gray-300 hover:text-neon-400 transition-colors font-medium">
+            </Link>
+            <Link 
+              to="/docs" 
+              className={`transition-colors font-medium ${
+                location.pathname === '/docs' 
+                  ? 'text-neon-400' 
+                  : 'text-gray-300 hover:text-neon-400'
+              }`}
+            >
               Docs
-            </a>
+            </Link>
           </div>
 
           {/* Wallet Connection */}
@@ -80,24 +105,42 @@ const Navbar: React.FC<NavbarProps> = ({ onConnectWallet, walletAddress, isConne
       {isMenuOpen && (
         <div className="md:hidden glass-card border-t border-neon-400/20">
           <div className="px-4 py-3 space-y-3">
-            <a href="#dashboard" className="block text-gray-300 hover:text-neon-400 transition-colors font-medium">
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="w-4 h-4" />
-                <span>Dashboard</span>
-              </div>
-            </a>
-            <a href="#analytics" className="block text-gray-300 hover:text-neon-400 transition-colors font-medium">
-              <div className="flex items-center space-x-2">
-                <Activity className="w-4 h-4" />
-                <span>Analytics</span>
-              </div>
-            </a>
-            <a href="#docs" className="block text-gray-300 hover:text-neon-400 transition-colors font-medium">
-              <div className="flex items-center space-x-2">
-                <BookOpen className="w-4 h-4" />
-                <span>Docs</span>
-              </div>
-            </a>
+            <Link 
+              to="/" 
+              className={`block transition-colors font-medium flex items-center space-x-2 ${
+                location.pathname === '/' 
+                  ? 'text-neon-400' 
+                  : 'text-gray-300 hover:text-neon-400'
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Activity className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Link>
+            <Link 
+              to="/analytics" 
+              className={`block transition-colors font-medium flex items-center space-x-2 ${
+                location.pathname === '/analytics' 
+                  ? 'text-neon-400' 
+                  : 'text-gray-300 hover:text-neon-400'
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Analytics</span>
+            </Link>
+            <Link 
+              to="/docs" 
+              className={`block transition-colors font-medium flex items-center space-x-2 ${
+                location.pathname === '/docs' 
+                  ? 'text-neon-400' 
+                  : 'text-gray-300 hover:text-neon-400'
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Docs</span>
+            </Link>
           </div>
         </div>
       )}

@@ -29,6 +29,12 @@ export const useCrossPlatform = () => {
         name: 'Browser Extension',
         type: 'browser',
         status: 'disconnected'
+      },
+      {
+        id: 'mobile',
+        name: 'Mobile App',
+        type: 'mobile',
+        status: 'disconnected'
       }
     ],
     activeConnections: 1,
