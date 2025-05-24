@@ -1,13 +1,63 @@
 
 import { useState, useEffect } from 'react';
 import { AIAgent, AgentMemory, Platform } from '@/types/agent';
-import GreenfieldService from '@/services/GreenfieldService';
+import GreenfieldService, { MemoryData, AgentData } from '@/services/GreenfieldService';
 import AIService from '@/services/AIService';
 
 const greenfieldConfig = {
   endpoint: 'https://gnfd-testnet-sp1.bnbchain.org',
   chainId: 5600, // Greenfield Testnet
 };
+
+// Transform functions to convert between types
+const transformAgentMemoryToMemoryData = (memory: AgentMemory): MemoryData => ({
+  id: memory.id,
+  type: memory.type as 'conversation' | 'insight' | 'preference' | 'context' | 'archive',
+  content: memory.content,
+  timestamp: memory.metadata.timestamp,
+  platform: memory.metadata.platform,
+  metadata: memory.metadata
+});
+
+const transformMemoryDataToAgentMemory = (memory: MemoryData, agentId: string): AgentMemory => ({
+  id: memory.id,
+  agentId: agentId,
+  type: memory.type as 'conversation' | 'fact' | 'preference' | 'action',
+  content: memory.content,
+  metadata: {
+    platform: memory.platform || 'web',
+    timestamp: memory.timestamp,
+    importance: memory.metadata?.importance || 5,
+    tags: memory.metadata?.tags || []
+  },
+  encrypted: true,
+  onChainHash: memory.metadata?.onChainHash
+});
+
+const transformAIAgentToAgentData = (agent: AIAgent): AgentData => ({
+  id: agent.id,
+  name: agent.name,
+  personality: agent.personality,
+  avatar: agent.avatar,
+  walletAddress: agent.walletAddress,
+  createdAt: agent.createdAt,
+  lastActive: agent.lastActive,
+  memoryCount: agent.memoryCount
+});
+
+const transformAgentDataToAIAgent = (agentData: AgentData): AIAgent => ({
+  ...agentData,
+  platforms: [
+    {
+      id: 'web',
+      name: 'Web Interface',
+      type: 'web',
+      status: 'connected',
+      lastSync: new Date()
+    }
+  ],
+  isActive: true
+});
 
 export const useImmortalAgent = (walletAddress: string | null) => {
   const [agent, setAgent] = useState<AIAgent | null>(null);
@@ -61,8 +111,9 @@ export const useImmortalAgent = (walletAddress: string | null) => {
         isActive: true
       };
       
-      // Store agent data in Greenfield
-      const txHash = await greenfieldService.storeAgentData(walletAddress, newAgent);
+      // Transform and store agent data in Greenfield
+      const agentData = transformAIAgentToAgentData(newAgent);
+      const txHash = await greenfieldService.storeAgentData(walletAddress, agentData);
       
       if (txHash) {
         console.log('Agent stored in Greenfield with tx:', txHash);
@@ -103,8 +154,9 @@ export const useImmortalAgent = (walletAddress: string | null) => {
     };
     
     try {
-      // Store memory in Greenfield
-      const txHash = await greenfieldService.storeMemory(walletAddress!, agent.id, memory);
+      // Transform and store memory in Greenfield
+      const memoryData = transformAgentMemoryToMemoryData(memory);
+      const txHash = await greenfieldService.storeMemory(walletAddress!, agent.id, memoryData);
       
       if (txHash) {
         memory.onChainHash = txHash;
@@ -123,7 +175,8 @@ export const useImmortalAgent = (walletAddress: string | null) => {
       
       // Store updated agent data
       if (txHash) {
-        await greenfieldService.storeAgentData(walletAddress!, updatedAgent);
+        const agentData = transformAIAgentToAgentData(updatedAgent);
+        await greenfieldService.storeAgentData(walletAddress!, agentData);
       }
       
       // Backup to localStorage
@@ -148,14 +201,18 @@ export const useImmortalAgent = (walletAddress: string | null) => {
     
     try {
       // Try to load from Greenfield first
-      const storedAgent = await greenfieldService.retrieveAgentData(walletAddress, 'latest');
+      const storedAgentData = await greenfieldService.retrieveAgentData(walletAddress, 'latest');
       
-      if (storedAgent) {
+      if (storedAgentData) {
+        const storedAgent = transformAgentDataToAIAgent(storedAgentData);
         setAgent(storedAgent);
         
         // Load memories from Greenfield
         const storedMemories = await greenfieldService.retrieveMemories(walletAddress, storedAgent.id);
-        setMemories(storedMemories);
+        const transformedMemories = storedMemories.map(memory => 
+          transformMemoryDataToAgentMemory(memory, storedAgent.id)
+        );
+        setMemories(transformedMemories);
         
         console.log('Agent and memories loaded from Greenfield');
       } else {
