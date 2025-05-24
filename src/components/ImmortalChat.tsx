@@ -1,11 +1,11 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AIAgent, AgentMemory } from '@/types/agent';
-import { Send, Brain, User } from 'lucide-react';
+import { Send, Brain, User, Zap } from 'lucide-react';
+import { useAI } from '@/hooks/useAI';
 
 interface Message {
   id: string;
@@ -24,13 +24,14 @@ const ImmortalChat: React.FC<ImmortalChatProps> = ({ agent, onAddMemory }) => {
     {
       id: 'welcome',
       type: 'agent',
-      content: `Hello! I'm ${agent.name}, your immortal AI agent. I remember everything we discuss and can learn from our interactions. How can I help you today?`,
+      content: `Hello! I'm ${agent.name}, your immortal AI agent powered by real AI and decentralized storage. I can analyze markets, provide DeFi insights, and remember everything we discuss across all platforms. How can I help you today?`,
       timestamp: new Date()
     }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { generateResponse } = useAI();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,21 +40,6 @@ const ImmortalChat: React.FC<ImmortalChatProps> = ({ agent, onAddMemory }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const generateAgentResponse = async (userMessage: string): Promise<string> => {
-    // Simulate AI thinking time
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-    
-    const responses = [
-      `Interesting perspective! Let me store this insight: "${userMessage.slice(0, 50)}..." in my decentralized memory. This will help me understand your preferences better.`,
-      `I've analyzed your message and added it to my permanent memory chain. Based on your personality, here's what I think...`,
-      `Your message has been encrypted and stored on-chain. I can see patterns in how you communicate - this helps me serve you better across all platforms.`,
-      `Thanks for sharing that! I'm updating my understanding of your goals. This knowledge will persist across our future interactions, whether on web, Discord, or any other platform.`,
-      `I've committed this conversation to my immortal memory. Your preferences are now part of my permanent knowledge base, accessible whenever you need me.`
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -73,8 +59,13 @@ const ImmortalChat: React.FC<ImmortalChatProps> = ({ agent, onAddMemory }) => {
       // Add user message to memory
       await onAddMemory('conversation', `User: ${userMessage.content}`);
 
-      // Generate agent response
-      const agentResponseContent = await generateAgentResponse(userMessage.content);
+      // Generate real AI response using OpenAI
+      const context = messages.slice(-5).map(m => ({ role: m.type, content: m.content }));
+      const agentResponseContent = await generateResponse(
+        userMessage.content, 
+        agent.personality, 
+        context
+      );
       
       const agentMessage: Message = {
         id: `agent_${Date.now()}`,
@@ -88,8 +79,20 @@ const ImmortalChat: React.FC<ImmortalChatProps> = ({ agent, onAddMemory }) => {
       // Add agent response to memory
       await onAddMemory('conversation', `Agent: ${agentMessage.content}`);
 
+      console.log('Real AI conversation completed');
+
     } catch (error) {
       console.error('Failed to process message:', error);
+      
+      // Fallback response
+      const fallbackMessage: Message = {
+        id: `agent_${Date.now()}`,
+        type: 'agent',
+        content: "I'm experiencing some connectivity issues with my AI processing, but I've stored your message in my decentralized memory. Let me provide you with some general DeFi insights while I reconnect to my full capabilities.",
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, fallbackMessage]);
     } finally {
       setIsTyping(false);
     }
@@ -112,7 +115,11 @@ const ImmortalChat: React.FC<ImmortalChatProps> = ({ agent, onAddMemory }) => {
           </Avatar>
           <div>
             <h3 className="text-lg font-semibold">{agent.name}</h3>
-            <p className="text-xs text-gray-400">Immortal AI Agent • Online</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-gray-400">Immortal AI Agent</p>
+              <Zap className="w-3 h-3 text-neon-400" />
+              <span className="text-xs text-neon-400">Real AI Powered</span>
+            </div>
           </div>
           <div className="ml-auto">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
@@ -147,7 +154,7 @@ const ImmortalChat: React.FC<ImmortalChatProps> = ({ agent, onAddMemory }) => {
                   className={`p-3 rounded-lg ${
                     message.type === 'user'
                       ? 'bg-gradient-to-r from-neon-600 to-cyber-600 text-white'
-                      : 'glass-card'
+                      : 'glass-card border border-neon-400/20'
                   }`}
                 >
                   <p className="text-sm">{message.content}</p>
@@ -165,11 +172,14 @@ const ImmortalChat: React.FC<ImmortalChatProps> = ({ agent, onAddMemory }) => {
                 <AvatarImage src={agent.avatar} />
                 <AvatarFallback><Brain className="w-4 h-4" /></AvatarFallback>
               </Avatar>
-              <div className="glass-card p-3 rounded-lg">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-neon-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-neon-400 rounded-full animate-bounce delay-75"></div>
-                  <div className="w-2 h-2 bg-neon-400 rounded-full animate-bounce delay-150"></div>
+              <div className="glass-card p-3 rounded-lg border border-neon-400/20">
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-neon-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-neon-400 rounded-full animate-bounce delay-75"></div>
+                    <div className="w-2 h-2 bg-neon-400 rounded-full animate-bounce delay-150"></div>
+                  </div>
+                  <span className="text-xs text-neon-400">AI Processing...</span>
                 </div>
               </div>
             </div>
