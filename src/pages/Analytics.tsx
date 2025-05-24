@@ -26,7 +26,7 @@ import {
   Legend
 } from 'recharts';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Activity, BarChart3, TrendingUp, DollarSign, AlertTriangle, Refresh, Zap } from 'lucide-react';
+import { Activity, BarChart3, TrendingUp, DollarSign, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
 
 const Analytics = () => {
   const marketData = useMarketData();
@@ -99,7 +99,7 @@ const Analytics = () => {
               onClick={() => marketData.refetch()}
               className="flex items-center gap-2"
             >
-              <Refresh className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4" />
               Refresh Data
             </Button>
           </div>
@@ -207,12 +207,8 @@ const Analytics = () => {
                       axisLine={{ stroke: '#444' }}
                       domain={['auto', 'auto']}
                     />
-                    <ChartTooltip 
-                      content={props => <ChartTooltipContent {...props} />} 
-                    />
-                    <ChartLegend 
-                      content={props => <ChartLegendContent {...props} />}
-                    />
+                    <Tooltip />
+                    <Legend />
                     <Area 
                       name="price"
                       type="monotone" 
