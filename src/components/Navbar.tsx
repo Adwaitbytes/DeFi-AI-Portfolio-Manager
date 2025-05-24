@@ -1,16 +1,17 @@
 
 import React, { useState } from 'react';
-import { Wallet, Menu, X, Activity, BarChart3, BookOpen } from 'lucide-react';
+import { Wallet, Menu, X, Activity, BarChart3, BookOpen, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 
 interface NavbarProps {
   onConnectWallet: () => void;
+  onDisconnectWallet: () => void;
   walletAddress: string | null;
   isConnecting: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onConnectWallet, walletAddress, isConnecting }) => {
+const Navbar: React.FC<NavbarProps> = ({ onConnectWallet, onDisconnectWallet, walletAddress, isConnecting }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -71,13 +72,24 @@ const Navbar: React.FC<NavbarProps> = ({ onConnectWallet, walletAddress, isConne
           {/* Wallet Connection */}
           <div className="flex items-center space-x-4">
             {walletAddress ? (
-              <div className="glass-card px-4 py-2 neon-border">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-neon-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-mono text-neon-400">
-                    {formatAddress(walletAddress)}
-                  </span>
+              <div className="flex items-center space-x-3">
+                <div className="glass-card px-4 py-2 neon-border">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-neon-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-mono text-neon-400">
+                      {formatAddress(walletAddress)}
+                    </span>
+                  </div>
                 </div>
+                <Button 
+                  onClick={onDisconnectWallet}
+                  variant="outline"
+                  size="sm"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Disconnect
+                </Button>
               </div>
             ) : (
               <Button 
