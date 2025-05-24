@@ -1,22 +1,16 @@
 
 import React, { useState } from 'react';
-import { Wallet, Menu, X, Activity, BarChart3, BookOpen, LogOut } from 'lucide-react';
+import { Wallet, Menu, X, Activity, BarChart3, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 
 interface NavbarProps {
   onConnectWallet: () => void;
-  onDisconnectWallet: () => void;
   walletAddress: string | null;
   isConnecting: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ 
-  onConnectWallet, 
-  onDisconnectWallet, 
-  walletAddress, 
-  isConnecting 
-}) => {
+const Navbar: React.FC<NavbarProps> = ({ onConnectWallet, walletAddress, isConnecting }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -34,11 +28,8 @@ const Navbar: React.FC<NavbarProps> = ({
               <div className="w-10 h-10 bg-gradient-to-br from-neon-400 to-cyber-600 rounded-xl flex items-center justify-center animate-glow-pulse">
                 <Activity className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-neon-400 to-cyber-400 bg-clip-text text-transparent hidden sm:block">
-                Immortal AI Agent
-              </span>
-              <span className="text-lg font-bold bg-gradient-to-r from-neon-400 to-cyber-400 bg-clip-text text-transparent sm:hidden">
-                AI Agent
+              <span className="text-xl font-bold bg-gradient-to-r from-neon-400 to-cyber-400 bg-clip-text text-transparent">
+                DeFi AI Portfolio
               </span>
             </Link>
           </div>
@@ -78,40 +69,24 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Wallet Connection */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center space-x-4">
             {walletAddress ? (
-              <div className="flex items-center space-x-2">
-                <div className="glass-card px-3 py-2 neon-border">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-neon-400 rounded-full animate-pulse"></div>
-                    <span className="text-xs sm:text-sm font-mono text-neon-400">
-                      {formatAddress(walletAddress)}
-                    </span>
-                  </div>
+              <div className="glass-card px-4 py-2 neon-border">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-neon-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-mono text-neon-400">
+                    {formatAddress(walletAddress)}
+                  </span>
                 </div>
-                <Button
-                  onClick={onDisconnectWallet}
-                  variant="outline"
-                  size="sm"
-                  className="text-red-400 border-red-400/30 hover:bg-red-400/10"
-                >
-                  <LogOut className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Disconnect</span>
-                </Button>
               </div>
             ) : (
               <Button 
                 onClick={onConnectWallet}
                 disabled={isConnecting}
-                className="cyber-button text-sm sm:text-base"
+                className="cyber-button"
               >
-                <Wallet className="w-4 h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">
-                  {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-                </span>
-                <span className="sm:hidden">
-                  {isConnecting ? 'Connecting...' : 'Connect'}
-                </span>
+                <Wallet className="w-4 h-4 mr-2" />
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
               </Button>
             )}
 

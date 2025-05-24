@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 
@@ -96,8 +97,6 @@ export const useWallet = () => {
       chainId: null,
       balance: null,
     });
-    // Clear any stored data related to the wallet
-    localStorage.clear();
   };
 
   useEffect(() => {

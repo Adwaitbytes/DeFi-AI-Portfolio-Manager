@@ -9,7 +9,6 @@ const Documentation = () => {
     <div className="min-h-screen bg-midnight-950 matrix-bg">
       <Navbar
         onConnectWallet={() => {}}
-        onDisconnectWallet={() => {}}
         walletAddress="0x0000000000000000000000000000000000000000"
         isConnecting={false}
       />
