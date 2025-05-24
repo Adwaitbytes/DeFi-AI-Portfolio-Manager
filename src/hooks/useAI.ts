@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 
 const PERPLEXITY_API_KEY = "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";
@@ -196,6 +197,7 @@ export const useAI = () => {
       console.error('Portfolio analysis failed:', error);
       // Fallback analysis on error
       await new Promise(resolve => setTimeout(resolve, 2000));
+      const totalValue = tokens.reduce((sum, token) => sum + token.value, 0);
       setAnalysis({
         riskLevel: 'Medium',
         volatility: 25.5,
